@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import * as argon2 from 'argon2';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { LoginDto } from './dto';
@@ -11,17 +12,25 @@ export class AuthService {
   constructor(private prisma: PrismaService, private jwtService: JwtService) {}
 
   async register(dto: RegistrationDto): Promise<Tokens> {
-    const hashedPassword = await argon2.hash(dto.password);
-    const newUser = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        hashedPassword,
-        username: dto.username,
-      },
-    });
-    const tokens = await this.getTokens(newUser.id, newUser.email);
-    await this.updateRtHash(newUser.id, tokens.refreshToken);
-    return tokens;
+    try {
+      const hashedPassword = await argon2.hash(dto.password);
+      const newUser = await this.prisma.user.create({
+        data: {
+          email: dto.email,
+          hashedPassword,
+          username: dto.username,
+        },
+      });
+      const tokens = await this.getTokens(newUser.id, newUser.email);
+      await this.updateRtHash(newUser.id, tokens.refreshToken);
+      return tokens;
+    } catch (err) {
+      if (err instanceof PrismaClientKnownRequestError) {
+        if (err.code === 'P2002') {
+          throw new ForbiddenException('User already exists');
+        }
+      }
+    }
   }
 
   async login(dto: LoginDto) {
