@@ -55,6 +55,9 @@ export class AuthService {
         hashedRefreshToken: null,
       },
     });
+    return {
+      message: 'Logout Successful',
+    };
   }
 
   async refresh(userId: number, refreshToken: string): Promise<Tokens> {

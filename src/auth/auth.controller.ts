@@ -4,15 +4,12 @@ import {
   HttpCode,
   HttpStatus,
   Post,
-  Req,
   UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { GetCurrentUser, Public } from './decorators';
 import { RegistrationDto, LoginDto } from './dto/index';
-import { AtGuard, RtGuard } from './guards';
+import { RtGuard } from './guards';
 import { Tokens } from './types';
 
 @Controller('auth')
@@ -33,7 +30,6 @@ export class AuthController {
     return this.authService.login(body);
   }
 
-  @UseGuards(AtGuard)
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(@GetCurrentUser('sub') userId: number) {
