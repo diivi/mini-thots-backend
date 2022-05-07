@@ -16,8 +16,10 @@ model User{
   updatedAt DateTime @updatedAt
 
   email String @unique
+  username String @unique
   hashedPassword  String
-  hashedRefreshToken String
+  hashedRefreshToken String?
+  blacklisted Boolean @default(false)
 
   @@map("users")
 }

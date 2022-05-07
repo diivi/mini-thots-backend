@@ -1,27 +1,53 @@
-import { Controller, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { Request } from 'express';
 import { AuthService } from './auth.service';
+import { GetCurrentUser, Public } from './decorators';
+import { RegistrationDto, LoginDto } from './dto/index';
+import { AtGuard, RtGuard } from './guards';
+import { Tokens } from './types';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  @Public()
   @Post('register')
-  async register() {
-    return this.authService.register();
+  @HttpCode(HttpStatus.CREATED)
+  async register(@Body() body: RegistrationDto): Promise<Tokens> {
+    return this.authService.register(body);
   }
 
+  @Public()
   @Post('login')
-  async login() {
-    return this.authService.login();
+  @HttpCode(HttpStatus.OK)
+  async login(@Body() body: LoginDto) {
+    return this.authService.login(body);
   }
 
+  @UseGuards(AtGuard)
   @Post('logout')
-  async logout() {
-    return this.authService.logout();
+  @HttpCode(HttpStatus.OK)
+  async logout(@GetCurrentUser('sub') userId: number) {
+    return this.authService.logout(userId);
   }
 
+  @Public()
+  @UseGuards(RtGuard)
   @Post('refresh')
-  async refresh() {
-    return this.authService.refresh();
+  @HttpCode(HttpStatus.OK)
+  async refresh(
+    @GetCurrentUser('refreshToken') refreshToken: string,
+    @GetCurrentUser('sub') userId: number,
+  ) {
+    return this.authService.refresh(userId, refreshToken);
   }
 }
